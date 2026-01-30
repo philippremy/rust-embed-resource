@@ -35,11 +35,11 @@ impl ResourceCompiler {
         } else {
             target = env::var_os("MINGW_CHOST").map(Cow::Owned).unwrap_or_else(|| {
                 OsStr::new(match env::var("TARGET").expect("No TARGET env var").as_bytes() {
-                        [b'x', b'8', b'6', b'_', b'6', b'4', ..] => "pe-x86-64".to_string(), // "x86_64"
-                        [b'a', b'a', b'r', b'c', b'h', b'6', b'4', ..] => "pe-aarch64-little".to_string(), // "aarch64"
+                        [b'x', b'8', b'6', b'_', b'6', b'4', ..] => "pe-x86-64", // "x86_64"
+                        [b'a', b'a', b'r', b'c', b'h', b'6', b'4', ..] => "pe-aarch64-little", // "aarch64"
                         // windres has "pe-aarch64-little" in the strings but doesn't actually accept it on my machine,
                         // llvm-windres only has i686 and amd64; still unported
-                        _ => "pe-i386".to_string(),
+                        _ => "pe-i386",
                     })
                     .into()
             });   
