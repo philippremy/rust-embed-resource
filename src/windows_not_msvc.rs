@@ -2,7 +2,7 @@ use self::super::{ParameterBundle, apply_parameters};
 use std::path::{PathBuf, MAIN_SEPARATOR};
 use std::process::Command;
 use std::borrow::Cow;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::env;
 
 
@@ -28,16 +28,22 @@ impl ResourceCompiler {
 
         // Under some msys2 environments, $MINGW_CHOST has the correct target for
         // GNU windres or llvm-windres (clang32, clang64, or clangarm64)
-        let target = env::var_os("MINGW_CHOST").map(Cow::Owned).unwrap_or_else(|| {
-            OsStr::new(match env::var("TARGET").expect("No TARGET env var").as_bytes() {
-                    [b'x', b'8', b'6', b'_', b'6', b'4', ..] => "pe-x86-64", // "x86_64"
-                    [b'a', b'a', b'r', b'c', b'h', b'6', b'4', ..] => "pe-aarch64-little", // "aarch64"
-                    // windres has "pe-aarch64-little" in the strings but doesn't actually accept it on my machine,
-                    // llvm-windres only has i686 and amd64; still unported
-                    _ => "pe-i386",
-                })
-                .into()
-        });
+        let target;
+        if std::env::var("CARGO_CFG_TARGET_ABI").unwrap() == "llvm".to_string() {
+            // Pass through the LLVM target
+            target = OsString::from(std::env::var("TARGET").unwrap()).into();
+        } else {
+            target = env::var_os("MINGW_CHOST").map(Cow::Owned).unwrap_or_else(|| {
+                OsStr::new(match env::var("TARGET").expect("No TARGET env var").as_bytes() {
+                        [b'x', b'8', b'6', b'_', b'6', b'4', ..] => "pe-x86-64".to_string(), // "x86_64"
+                        [b'a', b'a', b'r', b'c', b'h', b'6', b'4', ..] => "pe-aarch64-little".to_string(), // "aarch64"
+                        // windres has "pe-aarch64-little" in the strings but doesn't actually accept it on my machine,
+                        // llvm-windres only has i686 and amd64; still unported
+                        _ => "pe-i386".to_string(),
+                    })
+                    .into()
+            });   
+        }
 
         match apply_parameters(Command::new("windres")
                                    .args(&["--input", resource, "--output-format=coff", "--target"])
