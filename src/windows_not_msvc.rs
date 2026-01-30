@@ -31,7 +31,13 @@ impl ResourceCompiler {
         let target;
         if std::env::var("CARGO_CFG_TARGET_ABI").unwrap() == "llvm".to_string() {
             // Pass through the LLVM target
-            target = OsString::from(std::env::var("TARGET").unwrap()).into();
+            target = OsString::from(
+                format!("{}-{}-{}",
+                    std::env::var("CARGO_CFG_TARGET_ARCH").unwrap(),
+                    std::env::var("CARGO_CFG_TARGET_VENDOR").unwrap(),
+                    std::env::var("CARGO_CFG_TARGET_OS").unwrap(),
+                )
+            ).into();
         } else {
             target = env::var_os("MINGW_CHOST").map(Cow::Owned).unwrap_or_else(|| {
                 OsStr::new(match env::var("TARGET").expect("No TARGET env var").as_bytes() {
